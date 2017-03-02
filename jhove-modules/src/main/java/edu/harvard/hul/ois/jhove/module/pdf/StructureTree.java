@@ -32,6 +32,9 @@ public class StructureTree
     private boolean _valid;
     private boolean _transient;
 
+    protected PdfobjectCycleDetector _outlineObjectsCycleDetector = null;
+
+
     /**
      *  Constructor.  If there is a document structure tree,
      *  this fills in the appropriate information.  If there isn't,
@@ -63,6 +66,7 @@ public class StructureTree
         
         _module = module;
         _transient = tranzhent;
+        _outlineObjectsCycleDetector = new PdfobjectCycleDetector();
         //_raf = raf;
         //_parser = parser;
         try {
@@ -87,6 +91,10 @@ public class StructureTree
             children = getChildren ();
             _valid = true; 
     	}
+        catch (PdfMalformedException mfe){
+        	 _valid = false;
+        	 mfe.disparage(_module.get_info());
+        }
         catch (Exception e) {
             _valid = false;
         }
@@ -249,5 +257,24 @@ public class StructureTree
 	    throw new PdfInvalidException (invdata);
 	}
     }
+
+	public PdfobjectCycleDetector get_outlineObjectsCycleDetector() {
+		return _outlineObjectsCycleDetector;
+	}
+
+	public void set_outlineObjectsCycleDetector(
+			PdfobjectCycleDetector _outlineObjectsCycleDetector) {
+		this._outlineObjectsCycleDetector = _outlineObjectsCycleDetector;
+	}
+
+	public PdfModule get_module() {
+		return _module;
+	}
+
+	public void set_module(PdfModule _module) {
+		this._module = _module;
+	}
+
+
 
 }

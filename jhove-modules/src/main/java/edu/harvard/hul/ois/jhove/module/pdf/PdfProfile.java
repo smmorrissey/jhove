@@ -5,6 +5,7 @@
 
 package edu.harvard.hul.ois.jhove.module.pdf;
 
+import edu.harvard.hul.ois.jhove.RepInfo;
 import edu.harvard.hul.ois.jhove.module.*;
 import java.io.*;
 import java.util.*;
@@ -33,6 +34,9 @@ public abstract class PdfProfile
     /** Set to <code>true</code> if this file has previously
      *  been validated by an invocation of this PdfProfile. */
     private boolean _alreadyOK;
+    
+    /** The representation info          */
+	protected RepInfo _repInfo;
 
     /** 
      *   Creates a PdfProfile.
@@ -193,4 +197,19 @@ public abstract class PdfProfile
     {
         return true;
     }
+    
+    /**
+     *  Returns the Report Info object.
+     */
+    public  RepInfo get_repInfo() {
+    	return _repInfo;
+    }
+
+    /**
+     *  Sets the Report Info object.
+     */
+    public void set_repInfo(RepInfo _repInfo) {
+    	this._repInfo = _repInfo;
+    }
+    
 }

@@ -79,6 +79,8 @@ public class PdfModule
     /******************************************************************
      * PRIVATE INSTANCE FIELDS.
      ******************************************************************/
+    protected PdfobjectCycleDetector _outlineObjectsCycleDetector = null;
+	protected RepInfo _info;
     
     /* The maximum number of fonts that will be reported before we just
      * give up and report a stub to avoid running out of memory. */
@@ -461,6 +463,7 @@ public class PdfModule
         throws IOException
     {
         initParse ();
+        this.set_info(info);
         info.setFormat (_format[0]);
         info.setMimeType (_mimeType[0]);
         info.setModule (this);
@@ -635,6 +638,7 @@ public class PdfModule
             // Well-formedness is necessary to satisfy any profile.
             while (pter.hasNext ()) {
                 PdfProfile prof = pter.next ();
+                prof.set_repInfo(info);
                 if (prof.satisfiesProfile (_raf, _parser)) {
                     info.setProfile (prof.getText ());
                 }
@@ -3833,6 +3837,30 @@ public class PdfModule
     protected Property buildOutlineItemProperty (PdfDictionary dict, RepInfo info)
 	            throws PdfException
     {
+    	if (dict == null){
+    		throw new PdfInvalidException("Null PdfDictionary passed to method.");
+    	}
+    	if (_outlineObjectsCycleDetector == null){
+    		_outlineObjectsCycleDetector = new PdfobjectCycleDetector();
+    	}
+    	Integer objNumber = new Integer(dict.getObjNumber());
+    	if (_outlineObjectsCycleDetector.wasPreviouslyVisited((Object)objNumber)){
+    		info.setWellFormed(0);
+    		throw new PdfInvalidException("Cycle detected in graph of Outline objects:  Outline object number " +
+    				                objNumber + " was previously visited.");
+    	}//end if
+    	else{
+    		try{
+    			// add to set of visited nodes
+    			_outlineObjectsCycleDetector.visitNode((Object)objNumber);
+    		}catch(Exception ex){
+    			// this should not happen, since method only throws exception if attempt to add an
+    			// already visited node, and we have just checked to see that this node was not 
+    			// previously visited
+    			throw new PdfInvalidException("Outline object number " +
+    	                objNumber + " could not be added to graph of visited node.  " + ex.getMessage());
+    		}// end catch	
+    	}//end else
         String invalid = "Invalid outline dictionary item";
         List<Property> itemList = new ArrayList<Property> (3);
         try {
@@ -4131,5 +4159,13 @@ public class PdfModule
                 PropertyType.INTEGER,
                 PropertyArity.ARRAY,
                 iarr);
+    }
+    
+    public RepInfo get_info() {
+    	return _info;
+    }
+
+    public void set_info(RepInfo _info) {
+    	this._info = _info;
     }
 }

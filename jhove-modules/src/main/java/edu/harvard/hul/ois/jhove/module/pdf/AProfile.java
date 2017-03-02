@@ -70,6 +70,7 @@ public final class AProfile extends PdfProfile
     };
 
 
+    protected PdfobjectCycleDetector _outlineObjectsCycleDetector = null;
 
     /** 
      *   Constructor.
@@ -848,6 +849,31 @@ public final class AProfile extends PdfProfile
             PdfDictionary item = (PdfDictionary) _module.resolveIndirectObject
                        (outlineDict.get ("First"));
             while (item != null) {
+            	if (_outlineObjectsCycleDetector == null){
+            		_outlineObjectsCycleDetector = new PdfobjectCycleDetector();
+            	}
+            	Integer objNumber = new Integer(item.getObjNumber());
+            	
+            	// look to see if we've visited this node already
+            	if (_outlineObjectsCycleDetector.wasPreviouslyVisited((Object)objNumber)){
+            		get_repInfo().setMessage(new ErrorMessage("edu.harvard.hul.ois.jhove.module.pdf.AProfile.outlinesOK: Cycle detected in graph of Outline objects:  Outline object number " +
+			                objNumber + " was previously visited."));
+            		get_repInfo().setWellFormed(false);
+            		return false;
+            	}//end if
+            	else{
+            		try{
+            			// add to set of visited nodes
+            			_outlineObjectsCycleDetector.visitNode((Object)objNumber);
+            		}catch(Exception ex){
+            			// this should not happen, since method only throws exception if attempt to add an
+            			// already visited node, and we have just checked to see that this node was not 
+            			// previously visited
+            			get_repInfo().setMessage(new ErrorMessage("edu.harvard.hul.ois.jhove.module.pdf.AProfile.outlinesOK: Outline object number " +
+            	                objNumber + " could not be added to graph of visited node.  " + ex.getMessage())); // classname.method
+            			return false;
+            		}// end catch	
+            	}//end else
                 if (!checkOutlineItem (item)) {
                     return false;
                 }
@@ -863,7 +889,7 @@ public final class AProfile extends PdfProfile
 
 
     /* Check an outline item, going down recursively */
-    private boolean checkOutlineItem (PdfDictionary item) 
+    private boolean checkOutlineItem (PdfDictionary item) throws PdfException
     {
         // Check if there are actions for this item 
         try {
@@ -877,6 +903,29 @@ public final class AProfile extends PdfProfile
             PdfDictionary child = (PdfDictionary)
                      _module.resolveIndirectObject (item.get ("First"));
             while (child != null) {
+            	
+            	Integer objNumber = new Integer(child.getObjNumber());
+            	// look to see if we've visited this node already
+            	if (_outlineObjectsCycleDetector.wasPreviouslyVisited((Object)objNumber)){
+            		get_repInfo().setMessage(new ErrorMessage("edu.harvard.hul.ois.jhove.module.pdf.AProfile.checkOutlineItem: Cycle detected in graph of Outline objects:  Outline object number " +
+			                objNumber + " was previously visited.")); // classname.methodname()
+            		get_repInfo().setWellFormed(false);
+            		return false;
+            	}//end if
+            	else{
+            		try{
+            			// add to set of visited nodes
+            			_outlineObjectsCycleDetector.visitNode((Object)objNumber);
+            		}catch(Exception ex){
+            			// this should not happen, since method only throws exception if attempt to add an
+            			// already visited node, and we have just checked to see that this node was not 
+            			// previously visited
+            			get_repInfo().setMessage(new ErrorMessage("edu.harvard.hul.ois.jhove.module.pdf.AProfile.checkOutlineItem: Outline object number " +
+            	                objNumber + " could not be added to graph of visited node.  " + ex.getMessage()));
+            			return false;
+            		}// end catch	
+            	}//end else
+            	
                 if (!checkOutlineItem (child)) {
                     return false;
                 }

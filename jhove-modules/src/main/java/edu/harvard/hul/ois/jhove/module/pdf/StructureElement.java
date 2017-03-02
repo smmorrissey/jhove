@@ -5,6 +5,7 @@
 
 package edu.harvard.hul.ois.jhove.module.pdf;
 
+import edu.harvard.hul.ois.jhove.ErrorMessage;
 import edu.harvard.hul.ois.jhove.module.PdfModule;
 import java.io.*;
 import java.util.*;
@@ -99,6 +100,27 @@ public class StructureElement
             // The only one we check seriously is a structure element.
             _logger.info ("Type K element is dictionary");
             PdfDictionary kdict = (PdfDictionary) k;
+            Integer objNumber = new Integer(kdict.getObjNumber());
+            if (_tree.get_outlineObjectsCycleDetector().wasPreviouslyVisited(kdict)){
+            	_tree.get_module().get_info().setMessage(
+            			new ErrorMessage("edu.harvard.hul.ois.jhove.module.pdf.StructureElement.buildSubtree: Cycle detected in graph of StructureTree objects:  Structure Element object number " +
+		                objNumber + " was previously visited."));
+            	throw new PdfMalformedException("Cycle detected at object number " + objNumber);
+            }
+            else {
+            	try{
+        			// add to set of visited nodes
+            		_tree.get_outlineObjectsCycleDetector().visitNode((Object)objNumber);
+        		}catch(Exception ex){
+        			// this should not happen, since method only throws exception if attempt to add an
+        			// already visited node, and we have just checked to see that this node was not 
+        			// previously visited
+        			_tree.get_module().get_info().setMessage(new ErrorMessage("edu.harvard.hul.ois.jhove.module.pdf.StructureElement.buildSubTree: visitNode() error 1 Structure Element object number " +
+        	                objNumber + " could not be added to graph of visited node.  " + ex.getMessage())); // classname.method
+        			throw new PdfMalformedException("edu.harvard.hul.ois.jhove.module.pdf.buildSubtree.buildSubtree: Outline object number " +
+        	                objNumber + " could not be added to graph of visited node.  " + ex.getMessage());
+        		}// end catch
+            }
             if (isStructElem (kdict)) {
                 PdfObject kidsObject = (PdfObject)kdict.get("K");
                 if(kidsObject instanceof PdfSimpleObject) {
@@ -137,6 +159,27 @@ public class StructureElement
                 if (kelem instanceof PdfDictionary) {
                     PdfDictionary kdict = (PdfDictionary) kelem;
                     if (isStructElem (kdict)) {
+                        Integer objNumber = new Integer(kvec.elementAt (i)._objNumber);
+                        if (_tree.get_outlineObjectsCycleDetector().wasPreviouslyVisited(objNumber)){
+                        	_tree.get_module().get_info().setMessage(
+                        			new ErrorMessage("edu.harvard.hul.ois.jhove.module.pdf.StructureElement.buildSubtree: Cycle detected in StructureTree array:  Structure Element object number " +
+            		                objNumber + " was previously visited."));
+                        	throw new PdfMalformedException("Cycle detected at object number " + objNumber);
+                        }
+                        else {
+                        	try{
+                    			// add to set of visited nodes
+                        		_tree.get_outlineObjectsCycleDetector().visitNode((Object)objNumber);
+                    		}catch(Exception ex){
+                    			// this should not happen, since method only throws exception if attempt to add an
+                    			// already visited node, and we have just checked to see that this node was not 
+                    			// previously visited
+                    			_tree.get_module().get_info().setMessage(new ErrorMessage("edu.harvard.hul.ois.jhove.module.pdf.StructureElement.buildSubtree: visitNode() error 2:  Outline object number " +
+                    	                objNumber + " could not be added to graph of visited node.  " + ex.getMessage())); // classname.method
+                    			throw new PdfMalformedException("edu.harvard.hul.ois.jhove.module.pdf.StructureElement.buildSubtree: Structure Element object number " +
+                    	                objNumber + " could not be added to graph of visited node.  " + ex.getMessage());
+                    		}// end catch
+                        }
                                 _logger.info ("Building subtree");
 
                                 //check for non-zero before creating a new StructureElement
